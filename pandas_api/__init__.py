@@ -39,8 +39,14 @@ import pdb
 def sanitize(df):
     sanitized_df = df.copy()
     sanitized_df.fillna("")
+    sanitized_df["Date"] = pd.to_datetime(sanitized_df["Date"])
     sanitized_df["Competition"] = sanitized_df["Competition"].str.strip()
     sanitized_df["Competition"] = sanitized_df["Competition"].astype("category")
+    #sanitized_df["Rating"] = sanitized_df["Rating"].astype("int8")
+    sanitized_df["PL Position"] = sanitized_df["PL Position"].astype("int8")
+    sanitized_df["Shots MUFC"] = sanitized_df["Shots MUFC"].astype("int8")
+    sanitized_df["Shots Opponent"] = sanitized_df["Shots Opponent"].astype("int8")
+    sanitized_df["Possession"] = sanitized_df["Possession"].astype("int8")
     sanitized_df["Scorers"] = sanitized_df["Scorers"].str.rstrip()
     sanitized_df["Opponent"] = sanitized_df["Opponent"].str.rstrip()
     sanitized_df["Score"] = (
@@ -50,7 +56,8 @@ def sanitize(df):
     )
     sanitized_df["Goal Margin"] = (
         sanitized_df["Man Utd Score"] - sanitized_df["Opponent Score"]
-    )
+    ).astype("int8")
+
     return sanitized_df
 
 def split_df_by_competition(df):
