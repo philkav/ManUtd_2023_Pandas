@@ -1,127 +1,47 @@
 import pandas as pd
+import pandas_api
+# import polars as pl
+# import polars_api
 
-"""
->> df
-Data columns (total 17 columns):
- #   Column          Non-Null Count  Dtype
----  ------          --------------  -----
- 0   Date            28 non-null     object
- 1   Competition     28 non-null     category
- 2   GW              28 non-null     int64
- 3   Venue           28 non-null     object
- 4   Opponent        28 non-null     object
- 5   Man Utd Score   28 non-null     int64
- 6   Opponent Score  28 non-null     int64
- 7   W/L             28 non-null     object
- 8   Rating          28 non-null     object
- 9   Scorers         25 non-null     object
- 10  PL Position     28 non-null     int64
- 11  Shots MUFC      28 non-null     int64
- 12  Shots Opponent  28 non-null     int64
- 13  Possession      28 non-null     int64
- 14  MOTM            26 non-null     object
- 15  Score           28 non-null     object
- 16  Goal Margin     28 non-null     int64
-dtypes: category(1), int64(8), object(8)
-memory usage: 3.9+ KB
-
->> competitions
-competitions = {
-    'All' : <df>,
-    'Europa League Group E': <df>,
-    'FA Cup': <df>,
-    'League Cup': <df>,
-    'Premier League': <df>
-}
-
-"""
-
-
-def sanitize(df):
-    sanitized_df = df.copy()
-    sanitized_df.fillna("")
-    sanitized_df["Competition"] = sanitized_df["Competition"].str.strip()
-    sanitized_df["Competition"] = sanitized_df["Competition"].astype("category")
-    sanitized_df["Scorers"] = sanitized_df["Scorers"].str.rstrip()
-    sanitized_df["Opponent"] = sanitized_df["Opponent"].str.rstrip()
-    sanitized_df["Score"] = (
-        sanitized_df["Man Utd Score"].astype(str)
-        + "-"
-        + sanitized_df["Opponent Score"].astype(str)
-    )
-    sanitized_df["Goal Margin"] = (
-        sanitized_df["Man Utd Score"] - sanitized_df["Opponent Score"]
-    )
-    return sanitized_df
-
-
-def split_df_by_competition(df):
-    comp_df = {"All": df}
-    for competition in df["Competition"].cat.categories.to_list():
-        comp_df[competition] = df[df["Competition"] == competition]
-    return comp_df
-
-
-def get_top_scorers(df, limit=10):
-    return (
-        pd.Series(
-            [
-                x.replace("(P)", "").strip()
-                for _list in df["Scorers"].dropna().str.split(",")
-                for x in _list
-            ]
-        )
-        .value_counts()
-        .head(limit)
-    )
-
-
-def get_goalscorer_data(player, df):
-    return df[df["Scorers"].str.contains(player).fillna(False)]
-
-
-def get_matches_by_opponent(opponent, df):
-    return df[df["Opponent"] == opponent]
+api = pandas_api
+api_name = "pandas"
 
 
 ## MAIN DECLARATIONS
-df = sanitize(pd.read_csv("dataframe.csv"))
-df = sanitize(df)
-competitions = split_df_by_competition(df)
+pandas_df = pandas_api.sanitize(pd.read_csv("dataframe.csv"))
+pandas_competitions = pandas_api.split_df_by_competition(pandas_df)
+
+# polars_df = polars_api.sanitize(pl.read_csv('dataframe.csv'))
+# polars_competitions = polars_api.split_df_by_competition(polars_df)
 
 
-if __name__ == "__main__":
-
-    """
-    If mufc.py is executed; it will show some sample outputs
-    """
-
+def pandas_samples(df, competitions):
     ## Pick some cols we want to display on output
     short_cols = ["Date", "Competition", "Opponent", "Score", "W/L", "Scorers"]
 
     ## Show top scorer in each competition
     for comp, comp_df in competitions.items():
         print(f"\n=== Top Scorer in {comp} ===")
-        print(get_top_scorers(comp_df, limit=5).to_string())
+        print(api.get_top_scorers(comp_df, limit=5).to_string())
 
     ## Show all of Rashfords Goals
     print(f"\n=== Rashfords Goals ===")
     print(
-        get_goalscorer_data("Rashford", competitions["All"])[short_cols].to_string(
+        api.get_goalscorer_data("Rashford", competitions["All"])[short_cols].to_string(
             index=False
         )
     )
 
     print(f"\n=== Rashfords Goals PL ===")
     print(
-        get_goalscorer_data("Rashford", competitions["Premier League"])[
+        api.get_goalscorer_data("Rashford", competitions["Premier League"])[
             short_cols
         ].to_string(index=False)
     )
 
     print(f"\n=== Man City Results ===")
     print(
-        get_matches_by_opponent("Man City", competitions["All"])[short_cols].to_string(
+        api.get_matches_by_opponent("Man City", competitions["All"])[short_cols].to_string(
             index=False
         )
     )
@@ -152,9 +72,28 @@ if __name__ == "__main__":
         ][short_cols].to_string(index=False)
     )
 
+    ## Order results from wosrt to best
     print(f"\n=== Results from Worst to Best ===")
     print(
         competitions["All"]
         .sort_values(by=["Goal Margin", "Man Utd Score"])[short_cols + ["Rating"]]
         .to_string(index=False)
     )
+
+    ## Get Wins v Draws v Losses as a pct
+    print(f"\n=== W/D/L Percentage ===")
+    wdl_pct = api.get_wdl_percentage(df)
+    print(f"Win: {wdl_pct['W']:>.2f}%, Draw: {wdl_pct['D']:>.2f}%, Loss: {wdl_pct['L']:>.2f}%")
+
+    ## Show matches v the 5 other Top 6 teams
+    print(f"\n=== Versus Top 6 ===")
+    top_6 = ['Arsenal', 'Man City', 'Liverpool', 'Spurs', 'Chelsea']
+    top_6_df = df[df['Opponent'].isin(top_6)][short_cols]
+    print(top_6_df.to_string(index=False))
+
+if __name__ == "__main__":
+    """
+    If mufc.py is executed; it will show some sample outputs
+    """
+    if api_name == "pandas":
+        pandas_samples(pandas_df, pandas_competitions)
