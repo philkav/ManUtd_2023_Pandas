@@ -24,6 +24,10 @@ def pandas_samples(df, competitions):
         print(f"\n=== Top Scorer in {comp} ===")
         print(api.get_top_scorers(comp_df, limit=5).to_string())
 
+    ## Most MOTM
+    print("\n=== Most MOTM awards ===")
+    print(df['MOTM'].value_counts())
+
     ## Show all of Rashfords Goals
     print(f"\n=== Rashfords Goals ===")
     print(
@@ -39,12 +43,14 @@ def pandas_samples(df, competitions):
         ].to_string(index=False)
     )
 
+    """
     print(f"\n=== Man City Results ===")
     print(
         api.get_matches_by_opponent("Man City", competitions["All"])[short_cols].to_string(
             index=False
         )
     )
+    """
 
     print(f"\n=== Home v Away Results ===")
     home_dict = df[df["Venue"] == "Old Trafford"]["W/L"].value_counts().to_dict()
@@ -72,24 +78,32 @@ def pandas_samples(df, competitions):
         ][short_cols].to_string(index=False)
     )
 
-    ## Order results from wosrt to best
+    ## Order results from worst to best
+    """
     print(f"\n=== Results from Worst to Best ===")
     print(
         competitions["All"]
         .sort_values(by=["Goal Margin", "Man Utd Score"])[short_cols + ["Rating"]]
         .to_string(index=False)
     )
+    """
 
     ## Get Wins v Draws v Losses as a pct
     print(f"\n=== W/D/L Percentage ===")
     wdl_pct = api.get_wdl_percentage(df)
     print(f"Win: {wdl_pct['W']:>.2f}%, Draw: {wdl_pct['D']:>.2f}%, Loss: {wdl_pct['L']:>.2f}%")
 
+    ## Show Draws
+    print("\n=== Draws ===")
+    print(df[df['W/L'] == 'D'][short_cols + ["Rating"]])
+
     ## Show matches v the 5 other Top 6 teams
+    """
     print(f"\n=== Versus Top 6 ===")
     top_6 = ['Arsenal', 'Man City', 'Liverpool', 'Spurs', 'Chelsea']
     top_6_df = df[df['Opponent'].isin(top_6)][short_cols]
     print(top_6_df.to_string(index=False))
+    """
 
 if __name__ == "__main__":
     """
