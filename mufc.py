@@ -22,16 +22,16 @@ def pandas_samples(df, competitions):
     ## Show top scorer in each competition
     for comp, comp_df in competitions.items():
         print(f"\n=== Top Scorer in {comp} ===")
-        print(api.get_top_scorers(comp_df, limit=5).to_string())
+        print(api.get_top_scorers(comp_df, limit=3).to_string())
 
     ## Most MOTM
     print("\n=== Most MOTM awards ===")
-    print(df['MOTM'].value_counts())
+    print(df['MOTM'].value_counts().head(4))
 
     ## Show all of Rashfords Goals
     print(f"\n=== Rashfords Goals ===")
     print(
-        api.get_goalscorer_data("Rashford", competitions["All"])[short_cols].to_string(
+        api.get_goalscorer_data("Rashford", competitions["All"])[short_cols].head(3).to_string(
             index=False
         )
     )
@@ -94,8 +94,10 @@ def pandas_samples(df, competitions):
     print(f"Win: {wdl_pct['W']:>.2f}%, Draw: {wdl_pct['D']:>.2f}%, Loss: {wdl_pct['L']:>.2f}%")
 
     ## Show Draws
+    """
     print("\n=== Draws ===")
     print(df[df['W/L'] == 'D'][short_cols + ["Rating"]])
+    """
 
     ## Show matches v the 5 other Top 6 teams
     """
@@ -104,6 +106,9 @@ def pandas_samples(df, competitions):
     top_6_df = df[df['Opponent'].isin(top_6)][short_cols]
     print(top_6_df.to_string(index=False))
     """
+
+    print(f"\n=== League Cup Results===")
+    print(competitions['League Cup'][short_cols].to_string(index=False))
 
 if __name__ == "__main__":
     """
